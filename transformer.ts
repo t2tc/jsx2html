@@ -29,8 +29,13 @@ const $this = b.thisExpression;
 
 type AbstractJSX = {
     tag: string,
+    namespace?: string,
     attributes?: Record<string, string>,
     children?: (AbstractJSX | string)[],
+}
+
+function loadConfig(config: Record<string, any>) {
+
 }
 
 namespace Generator {
@@ -66,7 +71,6 @@ namespace Generator {
         export const $createSVGElement = (id: string, tag: string) => {
             return $createElementNS(id, tag, "http://www.w3.org/2000/svg");
         }
-
         export const $appendChildren = (parentId: string, childrenIds: string[]) => {
         }
     }
