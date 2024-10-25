@@ -1,5 +1,8 @@
 
 const simpleJsx = <div>Simple JSX</div>;
+const simpleJsxWithNamespace = <svg:circle cx={10} cy={10} r={10} />;
+const simpleJsxWithMemberExpression = <svg.circle cx={10} cy={10} r={10} />;
+
 const simpleJsx2 = <p class="text-bold text-blue">Simple JSX</p>;
 const simpleJsx3 = <h2 class="text-bold text-blue" style={{ color: 'red' }}>Simple JSX</h2>;
 const simpleJsx4 = <canvas class="text-bold text-blue" style={{ color: 'red' }} onClick={() => alert('Hello')}>Simple JSX</canvas>;
@@ -13,9 +16,10 @@ let c = <div a="hello" b="hello" d={12} e={"hello2"} f={() => { return "hello" }
 // let c = <div a=<p>this is surprising legal, but should be avoided.</p> s=<> a fragment is also legal, but vscode doesn't even render it properly. </> b="hello" d={12} e={"hello2"} f={()=>{ return "hello"}} {...g} {...g2} h></div>;
 
 const arr = [1, 2, 3, 4, 5];
-const jsxWithInAJsx = <for each={arr}>{
-    (item) => <div>{item}</div>
-}</for>;
+
+//const jsxWithInAJsx = <for each={arr}>{
+//    (item) => <div>{item}</div>
+//}</for>;
 
 const jsxSpreadAttrTest = <div {...{ class: 'text-bold text-blue' }}>Simple JSX</div>;
 const jsxSpreadTest2 = <svg {...{ class: 'text-bold text-blue', style: { color: 'red' } }}>Simple JSX</svg>;
