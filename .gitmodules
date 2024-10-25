@@ -1,0 +1,3 @@
+[submodule "third_parties/recast"]
+	path = third_parties/recast
+	url = https://github.com/benjamn/recast
