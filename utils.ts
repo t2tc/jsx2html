@@ -1,4 +1,11 @@
-import { parse } from "@babel/parser";
+import { parse } from "./third_parties/recast/main.ts";
+import chalk from "chalk";
+import { StatementKind } from "ast-types/lib/gen/kinds";
+
+// All parsing should be using babel parser, which supports jsx better.
+function parseCode(code: string) {
+    return parse(code, { parser: require("recast/parsers/babel") });
+}
 
 function containsOnlyWhitespace(str: string): boolean {
     return str.trim() === "";
@@ -9,15 +16,31 @@ function cleanWhitespaceAfterLinebreaks(str: string): string {
 }
 
 function parseStatements(statements: string) {
-    return parse(statements).program.body;
+    let body: StatementKind[] = [];
+    try {
+        body = parseCode(statements).program.body;
+    } catch (e) {
+        console.error(chalk.red("Error[parseStatements]:"), chalk.green("statements:"), statements);
+        throw e;
+    }
+    if ("DEBUG" in globalThis && globalThis.DEBUG) {
+        console.log(chalk.red("DEBUG[parseStatements]:"), chalk.green("statements:"), `[${body.map((stmt) => stmt.type).join(", ")}]`);
+    }
+    return body;
 }
 
 function makeASTTemplate<T extends (...args: any[]) => string>(templateFunction: T) {
-    return (...args: Parameters<T>) => parseStatements(templateFunction(...args));
+    return (...args: Parameters<T>) => {
+        if ("DEBUG" in globalThis && globalThis.DEBUG) {
+            console.log(chalk.red("DEBUG[makeASTTemplate]:"), chalk.green("templateGenerated:"), templateFunction(...args));
+        }
+        const statements = templateFunction(...args);
+        return parseStatements(statements);
+    };
 }
 
 function formalizeName(name: string) {
-    return name.replace(/-/g, "_");
+    return name.replace(/-/g, "_").replace(/\./g, "_");
 }
 
 const counter = new Map<string, number>();
@@ -31,4 +54,10 @@ function generateId(name: string) {
     return `${name}${counter.get(name)}`;
 }
 
-export { containsOnlyWhitespace, cleanWhitespaceAfterLinebreaks, parseStatements, makeASTTemplate, generateId };
+export { parseCode,
+    containsOnlyWhitespace,
+    cleanWhitespaceAfterLinebreaks,
+    parseStatements,
+    makeASTTemplate,
+    generateId
+};

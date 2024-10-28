@@ -1,22 +1,20 @@
 import fs from "node:fs";
 import path from "node:path";
 import { execSync } from "node:child_process";
-import { parse, print, visit } from "./third_parties/recast/main.ts";
+import { parse, print } from "./third_parties/recast/main.ts";
 import { convert, convertJSXFragment } from "./transformer/convert";
+import { parseCode } from "./utils.ts";
 
+globalThis.DEBUG = true;
+    
 function openWithEditor(fileName: string) {
     let editor = "cursor";
     let command = `${editor} ${fileName}`;
     execSync(command);
 }
 
-function parseCode(code: string) {
-    return parse(code, { parser: require("recast/parsers/babel") });
-}
-
 function main() {
     let fileName = process.argv[2];
-    console.log('fileName', fileName);
     if (!fileName) {
         fileName = "tests/deep.jsx";
     }
