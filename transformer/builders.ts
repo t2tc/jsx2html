@@ -1,6 +1,8 @@
 import chalk from "chalk";
-import { makeASTTemplate } from "../utils";
+import { makeASTTemplate } from "./utils";
 import { AttributeParsedResult } from "./attribute";
+import { builders as b } from "ast-types";
+import { StatementKind } from "ast-types/gen/kinds";
 
 const $createElement = makeASTTemplate((name: string, tag: string) =>
     `let ${name} = document.createElement("${tag}");\n`);
@@ -21,4 +23,8 @@ const $setAttribute = makeASTTemplate((name: string, attribute: AttributeParsedR
 const $createTextNode = makeASTTemplate((name: string, value: string) =>
     `let ${name} = document.createTextNode(\`${value}\`);\n`);
 
-export { $createElement, $createElementNS, $setAttribute, $createTextNode };
+function $iffe(statements: StatementKind[]) {
+    return b.functionDeclaration(b.identifier("iffe"), [], b.blockStatement(statements));
+}
+
+export { $createElement, $createElementNS, $setAttribute, $createTextNode, $iffe };

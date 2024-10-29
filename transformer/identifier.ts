@@ -6,7 +6,7 @@ type Identifier = {
     name: string;
 }
 
-function getIdentifier(node: namedTypes.JSXIdentifier | namedTypes.JSXMemberExpression | namedTypes.JSXNamespacedName): Identifier {
+function getJSXIdentifier(node: namedTypes.JSXIdentifier | namedTypes.JSXMemberExpression | namedTypes.JSXNamespacedName): Identifier {
     if (node.type === "JSXIdentifier") {
         return {
             namespace: null,
@@ -26,4 +26,13 @@ function getIdentifier(node: namedTypes.JSXIdentifier | namedTypes.JSXMemberExpr
     throw new Error("Invalid identifier type");
 }
 
-export { getIdentifier, type Identifier };
+function processIdentifier(identifier: Identifier) {
+    if (identifier.namespace) {
+        if (identifier.namespace === "svg") {
+            identifier.namespace = "http://www.w3.org/2000/svg";
+        }
+    }
+    return identifier;
+}
+
+export { getJSXIdentifier as getIdentifier, type Identifier, processIdentifier };

@@ -12,9 +12,9 @@ const a = <div stringAttribute="b"
     attribute-with-dash={"e"}
     attributeWithStringLiteral={"f"}
     attributeWithStringLiteral2={'g'}
-    attributeWithStringLiteral3={`h`}
+    attributeWithTemplateLiteral={`h`}
     attributeWithBooleanLiteral={true}
-    attributeWithRegExpLiteral={/regex/}
+    attributeWithRegExpLiteral={/regex/g}
     attributeWithNull={null}
     attributeWithUndefined={undefined}
     attributeWithArray={["a", "b", "c"]}
@@ -25,7 +25,7 @@ const a = <div stringAttribute="b"
     }}
     attributeWithoutValue
     jsxWithinAttribute={<div attribute="jsx">jsx</div>}
-//    {...spreadAttribute}
+    {...spreadAttribute}
 />;
 
 console.log(a);
