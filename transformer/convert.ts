@@ -54,6 +54,19 @@ function getJSXRoots(ast: any) {
     // The key is the id of the element, and the value is an array of its parents' ids, ordered from the root to itself.
     const pathMap = new Map<string, string[]>();
 
+    function traverseParent(path: NodePath<namedTypes.JSXElement>) {
+        function traverseParentInternal(path: NodePath<namedTypes.JSXElement>, parents: string[]) {
+            if (path.parentPath.node.type !== "JSXElement") {
+                return parents;
+            } else {
+                const parentId = nameMap.get(path.parentPath.node)!;
+                return traverseParentInternal(path.parent, [parentId, ...parents]);
+            }
+        }
+
+        return traverseParentInternal(path, []);
+    }
+
     visit(ast, {
         visitJSXElement(path) {
             const id = getIdentifier(path.node.openingElement.name);
@@ -66,17 +79,15 @@ function getJSXRoots(ast: any) {
             elementMap.set(generatedId, path.node);
 
             if (path.parentPath.node.type !== "JSXElement") {
-                rootSet.add(generatedId); 
+                rootSet.add(generatedId);
             } else {
-//               traverseParent(path, [generatedId]);
+                pathMap.set(generatedId, traverseParent(path));
             }
             this.traverse(path);
         },
     });
 
-//    console.log(pathMap);
-
-    return { rootSet, nameMap, elementMap };
+    return { rootSet, nameMap, elementMap, pathMap };
 }
 
 
