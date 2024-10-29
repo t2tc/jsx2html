@@ -1,17 +1,11 @@
 import fs from "node:fs";
 import path from "node:path";
-import { execSync } from "node:child_process";
-import { parse, print } from "./third_parties/recast/main.ts";
-import { convert, convertJSXFragment } from "./transformer/convert";
-import { parseCode } from "./utils.ts";
 
-globalThis.DEBUG = true;
-    
-function openWithEditor(fileName: string) {
-    let editor = "cursor";
-    let command = `${editor} ${fileName}`;
-    execSync(command);
-}
+import { print } from "./third_parties/recast/main.ts";
+import { convert, convertJSXFragment } from "./transformer/convert";
+import { parseCode } from "./transformer/utils";
+
+// globalThis.DEBUG = true;
 
 function main() {
     let fileName = process.argv[2];
