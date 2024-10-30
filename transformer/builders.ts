@@ -23,8 +23,17 @@ const $setAttribute = makeASTTemplate((name: string, attribute: AttributeParsedR
 const $createTextNode = makeASTTemplate((name: string, value: string) =>
     `let ${name} = document.createTextNode(\`${value}\`);\n`);
 
+const $setInnerText = makeASTTemplate((name: string, value: string) =>
+    `${name}.textContent = \`${value}\`;\n`);
+
 function $iffe(statements: StatementKind[]) {
-    return b.functionDeclaration(b.identifier("iffe"), [], b.blockStatement(statements));
+    return b.callExpression(b.arrowFunctionExpression([], b.blockStatement(statements)), []);
 }
 
-export { $createElement, $createElementNS, $setAttribute, $createTextNode, $iffe };
+const $return = makeASTTemplate((value: string) =>
+    `return ${value};\n`);
+
+const $appendChild = makeASTTemplate((parent: string, child: string) => 
+    `${parent}.appendChild(${child});\n`);
+
+export { $createElement, $createElementNS, $setAttribute, $createTextNode, $iffe, $setInnerText, $return, $appendChild };
