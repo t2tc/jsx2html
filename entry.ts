@@ -7,6 +7,18 @@ import { parseCode } from "./transformer/utils";
 
 // globalThis.DEBUG = true;
 
+function writeFile(filePath: string, code: string) {
+    fs.writeFileSync(filePath, code, "utf8");
+}
+
+function convertFileName(fileName: string) {
+    if (fileName.endsWith(".jsx")) {
+        fileName = fileName.slice(0, -4);
+    }
+    fileName += ".compiled.js";
+    return fileName;
+}
+
 function main() {
     let fileName = process.argv[2];
     if (!fileName) {
@@ -19,8 +31,10 @@ function main() {
     const code = fs.readFileSync(filePath, "utf8");
     const ast = parseCode(code);
     convertJSXFragment(code, ast);
-    convert(code, ast);
+    convert(ast);
     console.log(print(ast).code);
+
+    // writeFile(convertFileName(fileName), print(ast).code);
 }
 
 main();
