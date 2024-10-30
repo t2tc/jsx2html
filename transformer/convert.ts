@@ -39,7 +39,7 @@ function createAppendStatement(id: string, childrenMap: Map<string, string[]>) {
     return stmts;
 }
 
-function convert(code: string, ast: any) {
+function convert(ast: any) {
     const { rootSet, nameMap, elementMap, pathMap, childrenMap } = collectJSXElementRelationships(ast);
 
     const statementsMap = new Map<string, StatementKind[]>();
@@ -84,7 +84,6 @@ function convert(code: string, ast: any) {
                 }
                 const id = generateId("text");
                 const block = $createTextNode(id, text);
-                console.log(chalk.cyan("block"), print(b.blockStatement(block)).code);
                 this.traverse(path);
                 path.replace(b.blockStatement(block));
             }
@@ -97,16 +96,13 @@ function convert(code: string, ast: any) {
 
     visit(ast, {
         visitJSXElement(path) {
-            const identifier = getIdentifier(path.node.openingElement.name);
             const children = path.node.children as unknown[] as (namedTypes.BlockStatement | namedTypes.EmptyStatement)[];
             const processedChildren = combineBlockStatements(children);
 
             const statements = statementsMap.get(nameMap.get(path.node)!)!;
 
-//           const rootDecl = getCreateElementStatement(nameMap.get(path.node)!, identifier);
             const returnStmt = $return(nameMap.get(path.node)!);
 
-//           statements.unshift(...rootDecl);
             statements.push(...processedChildren);
             statements.push(...createAppendStatement(nameMap.get(path.node)!, childrenMap));
             statements.push(...returnStmt);

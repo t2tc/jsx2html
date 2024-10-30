@@ -33,7 +33,33 @@ function $iffe(statements: StatementKind[]) {
 const $return = makeASTTemplate((value: string) =>
     `return ${value};\n`);
 
-const $appendChild = makeASTTemplate((parent: string, child: string) => 
+const $appendChild = makeASTTemplate((parent: string, child: string) =>
     `${parent}.appendChild(${child});\n`);
 
-export { $createElement, $createElementNS, $setAttribute, $createTextNode, $iffe, $setInnerText, $return, $appendChild };
+/////
+
+const $effect = makeASTTemplate((statements: StatementKind[]) =>
+    `effect(() => {\n${statements.map(s => `    ${s}`).join("\n")}\n});\n`);
+
+let $setTextContentEffect;
+let $setInnerHTMLEffect;
+let $setInnerTextEffect;
+let $appendChildEffect;
+let $updateAttributeEffect;
+
+export {
+    $createElement,
+    $createElementNS,
+    $setAttribute,
+    $createTextNode,
+    $iffe,
+    $setInnerText,
+    $return,
+    $appendChild,
+    $effect,
+    $setTextContentEffect,
+    $setInnerTextEffect,
+    $setInnerHTMLEffect,
+    $appendChildEffect,
+    $updateAttributeEffect
+};

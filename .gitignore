@@ -6,3 +6,5 @@ third_parties
 *.code-workspace
 
 .vscode
+
+*.compiled.js
