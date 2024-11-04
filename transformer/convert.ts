@@ -1,16 +1,13 @@
 import { visit, print } from "./../third_parties/recast/main.ts";
 import { builders as b, namedTypes } from "ast-types";
 import { StatementKind } from "ast-types/gen/kinds";
-import { NodePath } from "ast-types/lib/node-path";
-import chalk from "chalk";
-import { generateId } from "./utils.ts";
 
 import { parseJSXAttributes } from "./attribute.ts";
-import { getIdentifier, Identifier, processIdentifier } from "./identifier.ts";
+import { getIdentifier, Identifier } from "./identifier.ts";
 
-import { $appendChild, $createElement, $createElementNS, $createTextNode, $iffe, $return, $setAttribute, $setInnerText } from "./builders.ts";
-import { logTree } from "./tree.ts";
-import { collectJSXElementRelationships, containsOnlyJSXText, mergeJSXTexts } from "./collect.ts";
+import { $appendChild, $createElement, $createElementNS, $iffe, $return, $setAttribute, $setInnerText } from "./builders.ts";
+
+import { collectJSXElementRelationships, mergeJSXTexts } from "./collect.ts";
 
 function convertJSXFragment(code: string, ast: any) {
     if (code.includes("<>")) /* source code contains JSX fragment */ {
@@ -40,12 +37,11 @@ function createAppendStatement(id: string, childrenMap: Map<string, string[]>) {
 }
 
 function convert(ast: any) {
-    const { rootSet, nameMap, elementMap, pathMap, childrenMap } = collectJSXElementRelationships(ast);
+    const { rootSet, nameMap, elementMap, childrenMap, textOnlyJSXElementSet } = collectJSXElementRelationships(ast);
 
     const statementsMap = new Map<string, StatementKind[]>();
 
     for (const root of rootSet) {
-        console.log(chalk.red("root"), getIdentifier(elementMap.get(root)!.openingElement.name).name);
         visit(elementMap.get(root)!, {
             visitJSXElement(path) {
                 //                if (nameMap.get(path.node) !== root && rootSet.has(nameMap.get(path.node)!)) {   // which is another root within, may be surround by other roots
@@ -63,31 +59,29 @@ function convert(ast: any) {
                     stmts.push(...$setAttribute(generatedId, attribute));
                 }
 
-                if (path.node.children && path.node.children.length > 0) {
-                    if (containsOnlyJSXText(path)) {
-                        stmts.push(...$setInnerText(generatedId, mergeJSXTexts(path.node.children as namedTypes.JSXText[])));
-                    }
+                if (textOnlyJSXElementSet.has(generatedId)) {
+                    stmts.push(...$setInnerText(generatedId, mergeJSXTexts(path.node.children as namedTypes.JSXText[])));
                 }
 
                 stmts = stmts.flat();
 
                 this.traverse(path);
+
                 statementsMap.set(generatedId, stmts);
+
                 path.replace(b.blockStatement(stmts));
             },
             visitJSXText(path) {
-                console.log(chalk.green("JSXText"), path.node.value);
                 const text = path.node.value;
-                if (text.trim() === "") {
-                    path.replace(b.emptyStatement());
-                    return false;
-                }
-                const id = generateId("text");
-                const block = $createTextNode(id, text);
+                const id = nameMap.get(path.node)!;
+//                if (!jsxElementPureTextSet.has(id)) {
+//                    const block = b.blockStatement($createTextNode(id, text));
+//                    console.log(chalk.bgYellow("JSXText"), print(block).code);
+//                }
                 this.traverse(path);
-                path.replace(b.blockStatement(block));
             }
         });
+
     }
 
     function combineBlockStatements(blocks: (namedTypes.BlockStatement | namedTypes.EmptyStatement)[]) {
@@ -109,16 +103,10 @@ function convert(ast: any) {
 
             const block = $iffe(statements);
 
-            console.log(chalk.bgRedBright("PROCESS ROOT"));
-            console.log(chalk.cyan("block"), print(block).code);
-            console.log(chalk.cyan("statements"), print(b.blockStatement(statements)).code);
-
             this.traverse(path);
             path.replace(block);
         }
     });
-
-    console.log(ast.program.body[0]);
 }
 
 export { convert, convertJSXFragment };

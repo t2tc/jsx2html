@@ -13,8 +13,6 @@ type AttributeParsedResult = {
 }
 
 function getJSXExpressionContainerValueForAttribute(node: namedTypes.JSXExpressionContainer): Omit<AttributeParsedResult, "name"> {
-    console.log(chalk.blue("expression type"), node.expression.type);
-
     if (node.expression.type === "JSXEmptyExpression") {
         throw new Error("JSX attributes must only be assigned a non-empty expression.");
     }
@@ -40,7 +38,6 @@ function getJSXExpressionContainerValueForAttribute(node: namedTypes.JSXExpressi
         node.expression.type === "NumericLiteral"
     ) {
 
-        console.log(chalk.yellow("value"), String(node.expression.value));
         return {
             type: "AttributeString",
             value: String(node.expression.value)
