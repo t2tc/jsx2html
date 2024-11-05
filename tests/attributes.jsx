@@ -5,7 +5,9 @@ const spreadAttribute = {
     spreadAttribute: "spread"
 };
 
-const a = <div stringAttribute="b"
+const a = <div
+    if="An attribute using reserved word"
+    stringAttribute="b"
     stringAttribute2='c'
     staticAttribute={1}
     attributeWithIdentifier={identifier}
