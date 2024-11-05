@@ -1,20 +1,11 @@
 import { NodePath } from "ast-types/lib/node-path";
 import { namedTypes, builders as b } from "ast-types";
 import chalk from "chalk";
-import { visit } from "recast";
-import { ASTNode } from "ast-types";
+import { visit } from "../third_parties/recast/main.ts";
 
 import { generateId } from "./utils.ts";
 import { getIdentifier } from "./identifier.ts";
-
-type JSXElementRelationship = {
-    rootSet: Set<string>;
-    nameMap: Map<namedTypes.JSXElement | namedTypes.JSXText, string>;
-    elementMap: Map<string, namedTypes.JSXElement | namedTypes.JSXText>;
-    pathMap: Map<string, string[]>;
-    childrenMap: Map<string, string[]>;
-    textOnlyJSXElementSet: Set<string>;
-}
+import { AttributeParsedResult, parseJSXAttributes } from "./attribute.ts";
 
 type StaticContentNode = {
     id: string;
@@ -23,33 +14,6 @@ type StaticContentNode = {
     dynamicMarker: string;
 }
 
-// tl: Managing empty JSXText can be tricky since whitespaces are involved in HTML and CSS.
-// We use some not-so-complete methods to remove empty JSXText.
-function removeEmptyJSXText(ast: any) {
-    function stringContainsOnlyWhitespaceAndNewlines(str: string) {
-        return /^[\s\n]*$/.test(str);
-    }
-
-    visit(ast, {
-        visitJSXText(path) {
-            const parent = path.parentPath.node as namedTypes.JSXElement;
-            const index = parent.children!.indexOf(path.node);
-            
-            if (index === 0 && stringContainsOnlyWhitespaceAndNewlines(path.node.value)) {
-                path.replace();
-            }
-
-            if (index === parent.children!.length - 1 && stringContainsOnlyWhitespaceAndNewlines(path.node.value)) {
-                path.replace();
-            }
-
-            if (stringContainsOnlyWhitespaceAndNewlines(path.node.value)) {
-                path.replace(b.JSXText(" "));
-            }
-            return false;
-        }
-    });
-}
 function traverseParent(path: NodePath<namedTypes.JSXElement>, nameMap: Map<namedTypes.JSXElement | namedTypes.JSXText, string>) {
     function traverseParentInternal(path: NodePath<namedTypes.JSXElement>, parents: string[]) {
         if (path.parentPath.node.type !== "JSXElement") {
@@ -67,8 +31,13 @@ function traverseParent(path: NodePath<namedTypes.JSXElement>, nameMap: Map<name
 // 也就是说，形如 <A><B>{<C></C></B></A> 中，<A> 和 <C> 都是根节点。
 // 现阶段的实现中，根节点将被翻译成 iffe 语句，而子节点只会被添加到其父节点的 children 中。
 // 这一个过程也会为每个 JSXElement 命名。
-function collectJSXElementRelationships(ast: any): JSXElementRelationship {
+function collect(ast: any) {
+
     const rootSet = new Set<string>();
+    // A set that marks the JSXElement that contains only JSXText.
+    const textOnlyJSXElementSet = new Set<string>();
+    // A set that marks the JSXElement that contains only static content.
+    const staticSet = new Set<string>();
 
     // A bidirectional map between JSXElement and its name.
     // 因为 JSXElement 在整个生命周期并不会被频繁创建和销毁，所以不考虑 GC。
@@ -84,13 +53,8 @@ function collectJSXElementRelationships(ast: any): JSXElementRelationship {
     // This map takes only the direct children (to appendChild)
     const childrenMap = new Map<string, string[]>();
 
-    // A set that marks the JSXElement that contains only JSXText.
-    const textOnlyJSXElementSet = new Set<string>();
-
-    // A set that marks the JSXElement that contains only static content.
-    const staticSet = new Set<string>();
-
-    removeEmptyJSXText(ast);
+    // A map that records the attributes of each JSXElement.
+    const attributeMap = new Map<string, AttributeParsedResult[]>();
 
     visit(ast, {
         visitJSXElement(path) {
@@ -100,6 +64,9 @@ function collectJSXElementRelationships(ast: any): JSXElementRelationship {
             // The counter will not reset itself during the whole process.
             const generatedId = generateId(id.name);
 
+            const attributes = parseJSXAttributes(path.node.openingElement);
+            attributeMap.set(generatedId, attributes);
+
             nameMap.set(path.node, generatedId);
             elementMap.set(generatedId, path.node);
 
@@ -108,7 +75,7 @@ function collectJSXElementRelationships(ast: any): JSXElementRelationship {
             } else {
                 const parentId = nameMap.get(path.parentPath.node)!;
                 pathMap.set(generatedId, traverseParent(path, nameMap));
-                
+
                 // Add this element to its parent's children
                 if (!childrenMap.has(parentId)) {
                     childrenMap.set(parentId, []);
@@ -140,20 +107,15 @@ function collectJSXElementRelationships(ast: any): JSXElementRelationship {
     });
 
     console.log(chalk.bgYellow("childrenMap"));
-//    console.log(childrenMap);
+    //    console.log(childrenMap);
 
     console.log(chalk.bgYellow("elementMap"));
-//    console.log(elementMap);
+    console.log(elementMap);
 
     console.log(chalk.bgYellow("pathMap"));
-//    console.log(pathMap);
+    //    console.log(pathMap);
 
-    return { rootSet, nameMap, elementMap, pathMap, childrenMap, textOnlyJSXElementSet };
-}
-
-function containsOnlyStaticContent(node: NodePath<namedTypes.JSXElement>) {
-    // every child doesn't have any dynamic content, which is JSXExpressionContainer
-    return node.node.children?.every(child => child.type !== "JSXExpressionContainer") ?? false;
+    return { rootSet, nameMap, elementMap, pathMap, childrenMap, textOnlyJSXElementSet, attributeMap };
 }
 
 function containsOnlyJSXText(node: NodePath<namedTypes.JSXElement>) {
@@ -164,4 +126,4 @@ function mergeJSXTexts(texts: namedTypes.JSXText[]) {
     return texts.map(text => text.value).join("");
 }
 
-export { collectJSXElementRelationships, containsOnlyJSXText, mergeJSXTexts };
+export { collect as collectJSXElementRelationships, containsOnlyJSXText, mergeJSXTexts };

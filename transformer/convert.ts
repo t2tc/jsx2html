@@ -8,6 +8,7 @@ import { getIdentifier, Identifier } from "./identifier.ts";
 import { $appendChild, $createElement, $createElementNS, $iffe, $return, $setAttribute, $setInnerText } from "./builders.ts";
 
 import { collectJSXElementRelationships, mergeJSXTexts } from "./collect.ts";
+import { debugOutput } from "./utils/debugOutput.ts";
 
 function convertJSXFragment(code: string, ast: any) {
     if (code.includes("<>")) /* source code contains JSX fragment */ {
@@ -28,16 +29,20 @@ function getCreateElementStatement(generatedId: string, id: Identifier) {
     }
 }
 
-function createAppendStatement(id: string, childrenMap: Map<string, string[]>) {
+const createAppendStatement = debugOutput(function createAppendStatement(id: string, childrenMap: Map<string, string[]>) {
     const stmts: StatementKind[] = [];
+
+    if (!childrenMap.has(id)) {
+        return [];
+    }
     for (const child of childrenMap.get(id)!) {
         stmts.push(...$appendChild(id, child));
     }
     return stmts;
-}
+});
 
 function convert(ast: any) {
-    const { rootSet, nameMap, elementMap, childrenMap, textOnlyJSXElementSet } = collectJSXElementRelationships(ast);
+    const { rootSet, nameMap, elementMap, childrenMap, textOnlyJSXElementSet, attributeMap } = collectJSXElementRelationships(ast);
 
     const statementsMap = new Map<string, StatementKind[]>();
 
@@ -50,7 +55,7 @@ function convert(ast: any) {
                 const id = getIdentifier(path.node.openingElement.name);
                 const generatedId = nameMap.get(path.node)!;
 
-                const attributes = parseJSXAttributes(path.node.openingElement);
+                const attributes = attributeMap.get(generatedId)!;
 
                 let stmts: StatementKind[] = [];
                 stmts.push(...getCreateElementStatement(generatedId, id));

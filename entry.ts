@@ -4,7 +4,8 @@ import path from "node:path";
 import { print } from "./third_parties/recast/main.ts";
 import { convert, convertJSXFragment } from "./transformer/convert";
 import { parseCode } from "./transformer/utils";
-import debugOutput from "./transformer/utils/debugOutput.ts";
+import { debugOutput } from "./transformer/utils/debugOutput.ts";
+import { preprocess } from "./transformer/preprocess.ts";
 
 // globalThis.DEBUG = true;
 
@@ -32,6 +33,7 @@ const main = debugOutput(
         const code = fs.readFileSync(filePath, "utf8");
         const ast = parseCode(code);
         convertJSXFragment(code, ast);
+        preprocess(ast);
         convert(ast);
         console.log(print(ast).code);
 
